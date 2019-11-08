@@ -22,6 +22,10 @@ configs.push(["127.0.0.1","User","Password",8101,false,false,false,false,'CoinNa
 // Enable if also a coin.walletdump should be saved // Wallets that are not on localhost are ignored
 createWalletDumpFile = true;
 
+// Delete older keys and dumps
+var deleteOlderFiles = true;
+var holdFilesForDays = 15;
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -137,6 +141,20 @@ async function asyncForEach(array, callback) {
         const coinClient = new Client(coinClientSSL);
 
         const getKeys = async () => {
+            // Delete old files if enabled
+            if(deleteOlderFiles){
+                var findRemoveSync = require('find-remove');
+                // Keys
+                try {
+                    var result = findRemoveSync(process.cwd()+'/keys', {age: {seconds: holdFilesForDays*86400}, extensions: '.log'});
+                } catch (e) {}
+                // Dumps
+                try {
+                    if(createWalletDumpFile){
+                        var result = findRemoveSync(process.cwd()+'/walletdumps', {age: {seconds: holdFilesForDays*86400}, extensions: '.dumpWallet'});
+                    }
+                } catch (e) {}
+            }
             // List accounts
             await listAccounts(coinClient).then(async accounts => {
                 var log = SimpleNodeLogger.createSimpleFileLogger( process.cwd()+'/keys/'+coinSymbolName+'_keys_'+new Date().today()+"-"+new Date().timeNow()+'.log' );
